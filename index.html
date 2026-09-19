@@ -1,12 +1,52 @@
 <!DOCTYPE html>
-<html lang="hr">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta http-equiv="refresh" content="0; url=./obloge.html" />
-  <title>EKORUSTIKA Obloge</title>
-</head>
+<html lang="hr"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><meta name="theme-color" content="#0a0a0a"/><title>EKORUSTIKA — Obloge Pro</title>
+<style>body{margin:0;background:#121212;color:#fff;font-family:system-ui,sans-serif}header{height:56px;background:#0a0a0a;display:flex;align-items:center;justify-content:center;font-weight:900;letter-spacing:-.02em}header b{color:#c1272d}header i{color:#1f8a3a;font-style:normal}main{max-width:840px;margin:0 auto;padding:16px 16px 96px}.card{background:#1e1e1e;border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px;margin:8px 0}button,.btn{border:0;border-radius:12px;padding:12px 16px;font-weight:800;background:#c1272d;color:#fff}input,select{width:100%;padding:10px;border-radius:10px;border:1px solid #333;background:#121212;color:#fff;margin-top:4px}nav{position:fixed;bottom:0;left:0;right:0;background:#0a0a0a;display:flex}nav button{flex:1;background:transparent;color:#888;padding:14px 0;font-size:12px}nav button.on{color:#c1272d}.muted{color:#888;font-size:12px}</style></head>
 <body>
-  <p><a href="./obloge.html">Otvori EKORUSTIKA Obloge Pro</a></p>
-</body>
-</html>
+<header><div><b>EKO</b><i>RUS</i>TIKA</div></header>
+<main id="v"></main>
+<nav>
+<button class="on" data-t="home">Početna</button>
+<button data-t="unos">Unos</button>
+<button data-t="klij">Stranke</button>
+<button data-t="new">+ Novo</button>
+</nav>
+<script>
+const K='ekorustika_proj_v2',P={SPC:2.2,MDF:1.8,WPC:2.5,Lamperija:2};
+const seed=[{id:'1',klijent:'Marko Horvat',telefon:'+385 91 234 5678',adresa:'Ilica 123, Zagreb',tip:'SPC',kvadratura:42,cijenaPoM2:28,ukupno:1176,datumMontaze:new Date().toISOString().slice(0,10),status:'U radu',napomena:'Riblja kost'}];
+let items; try{items=JSON.parse(localStorage.getItem(K)||'[]')}catch{items=[]}
+if(!items.length) items=seed;
+let tab='home';
+const $ = id => document.getElementById(id);
+function save(){localStorage.setItem(K,JSON.stringify(items))}
+function render(){
+  const act=items.filter(x=>x.status!=='Naplaćeno'&&x.status!=='Završeno');
+  if(tab==='home'){
+    $('v').innerHTML=`<h2>Aktivno • ${act.length}</h2>`+act.map(card).join('')+(act.length?'':'<div class="card muted">Nema aktivnih montaži</div>');
+  } else if(tab==='unos'){
+    $('v').innerHTML='<h2>Svi unosi</h2>'+items.map(card).join('');
+  } else if(tab==='klij'){
+    const m={}; items.forEach(x=>{m[x.klijent]=m[x.klijent]||[];m[x.klijent].push(x)});
+    $('v').innerHTML='<h2>Stranke</h2>'+Object.keys(m).map(n=>`<div class="card"><b>${n}</b><div class="muted">${m[n][0].telefon}<br>${m[n].length} montaža</div><a class="btn" href="tel:${(m[n][0].telefon||'').replace(/\s/g,'')}">Poziv</a></div>`).join('');
+  } else {
+    $('v').innerHTML=`<h2>Novi unos</h2><div class="card">
+      <label>Ime<input id="k"></label>
+      <label>Telefon<input id="t"></label>
+      <label>Adresa<input id="a"></label>
+      <label>Tip<select id="p"><option>SPC</option><option>MDF</option><option>WPC</option><option>Lamperija</option></select></label>
+      <label>m²<input id="m" type="number" value="20"></label>
+      <label>€/m²<input id="c" type="number" value="28"></label>
+      <p class="muted" id="calc"></p>
+      <button id="sv">Spremi</button></div>`;
+    const upd=()=>{const m=+$('m').value||0,c=+$('c').value||0,tip=$('p').value; $('calc').textContent=`${(m*1.1).toFixed(1)} m² s otpadom • ${Math.ceil(m*1.1/(P[tip]||2))} pak • ${(m*c).toFixed(0)} €`;};
+    ['m','c','p'].forEach(id=>$ (id).oninput=upd); upd();
+    $('sv').onclick=()=>{
+      const rec={id:Date.now().toString(),klijent:$('k').value.trim(),telefon:$('t').value.trim(),adresa:$('a').value.trim(),tip:$('p').value,kvadratura:+$('m').value||0,cijenaPoM2:+$('c').value||0,ukupno:(+$('m').value||0)*(+$('c').value||0),datumMontaze:new Date().toISOString().slice(0,10),status:'Upit',napomena:''};
+      if(!rec.klijent||!rec.kvadratura){alert('Unesi ime i m²');return;}
+      items=[rec,...items]; save(); tab='unos'; document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.t==='unos')); render();
+    };
+  }
+}
+function card(x){return `<div class="card"><b>${x.klijent}</b> · ${x.tip} ${x.kvadratura}m²<div class="muted">${x.adresa||''} · ${x.status} · ${x.ukupno}€</div></div>`}
+document.querySelector('nav').onclick=e=>{const b=e.target.closest('button'); if(!b)return; tab=b.dataset.t; document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('on',x===b)); render();};
+render();
+</script></body></html>
